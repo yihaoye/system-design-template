@@ -1,4 +1,4 @@
-# Uber 系统设计
+# Uber 或 Uber Eat 系统设计
 引用：https://jiayi797.github.io/2018/01/21/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1-%E8%AE%BE%E8%AE%A1Uber/  
   
 **得分点 Checklist：**  
@@ -137,7 +137,8 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
 
 
 ## Scale 拓展
-隐患？  
+### 数据库优化
+隐患：  
 * 需求是 150k QPS。Redis 的读写效率 > 100 QPS。那么是不是 1-2 台就可以了？
 * 万一 Redis 挂了就损失很大。
 * 解决方式—— DB Sharding
