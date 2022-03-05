@@ -2,7 +2,10 @@
 引用：https://jiayi797.github.io/2018/01/21/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1-%E8%AE%BE%E8%AE%A1Uber/  
   
 Uber 单一地区的系统架构:  
-![](./uber-single-zone-services-architecture.png)  
+![](./uber-single-region-services-architecture.png)  
+
+Uber 多地区的系统架构概况:  
+![](./uber-multi-regions-services-architecture.png)  
 
 **得分点 Checklist：**  
 * Weak（完成以下）
