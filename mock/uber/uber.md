@@ -1,7 +1,7 @@
 # Uber 系统设计
 引用：https://jiayi797.github.io/2018/01/21/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1-%E8%AE%BE%E8%AE%A1Uber/  
   
-得分点 Checklist：  
+**得分点 Checklist：**  
 * Weak（完成以下）
     * 分析出 Uber 是写密集型应用（与大部分应用是读密集型不一样）
     * 解决 LBS 类应用的核心问题（Geohash / Google S2）
@@ -14,7 +14,7 @@
   * 通过分析选择合适的数据库
   * 考虑到单点失效（多机）与数据故障（备份）如何解决
 * Strong Hired（完成以下）
-  * 深入理解 NoSQL DB 的实现以及 Ring Pop 的实现（读论文 http://bit.ly/1mDs0Yh）
+  * 深入理解 NoSQL DB 的实现以及 Ring Pop 的实现（读论文 http://bit.ly/1mDs0Yh ）
   * 设计 Uber Pool / Uber East
 
   
@@ -34,8 +34,8 @@
     * Uber Pool
     * Uber Eat
 
-## QPS / Stroage
-假设 20w 司机同时在线：
+### QPS / Stroage
+假设 20w 司机同时在线：  
 Driver QPS = 200k/4 = 50k，每次汇报200k个请求，每4秒汇报一次；这个占大头  
 Peek Driver QPS = 50k x 3 = 150k  
 Rider QPS 可以忽略：不用随时汇报位置，一定远小于 Driver QPS  
@@ -47,14 +47,33 @@ Uber 主要干的事情就两件：
 * 记录车的位置：GeoService
 * 匹配打车请求：DispatchService
 
-Driver 如何获得打车请求？—— Report location 的同时，服务器顺便返回匹配上的打车请求  
+Driver 如何获得打车请求？—— Report location 的同时，服务器顺便返回匹配上的打车请求，基本纲要：  
 * 司机向 dispatch service 发送位置信息，同时返回匹配的乘客信息  
 * 乘客向 dispatch service 发送打车请求，同时返回请求  
 
+### 具体打车流程 Work Solution（重点）  
+1. 乘客发出打车请求，服务器创建一次 Trip
+    1. 将 trip_id 返回给用户
+    2. 乘客每隔几秒询问一次服务器是否匹配成功
+2. 服务器找到匹配的司机，写入 Trip，状态为等待司机回应
+3. 同时修改 Driver Table 中的司机状态为不可用，并存入对应的 trip_id
+4. 司机汇报自己的位置
+5. 顺便在 Driver Table 中发现有分配给自己的 trip_id
+6. 去 Trip Table 查询对应的 Trip，返回给司机
+7. 司机接受打车请求
+8. 修改 Driver Table, Trip 中的状态信息
+9. 乘客发现自己匹配成功，获得司机信息
+10. 司机拒绝打车请求
+11. 修改 Driver Table，Trip 中的状态信息，标记该司机已经拒绝了该 trip
+12. 重新匹配一个司机，重复第 2 步
+
 ![](./uber-services.png)  
 
-Location Table —— 写多  
-Trip Table（匹配 Driver 和 Rider 的表） —— 读多（司机每4秒requst时会去读一下有没有匹配的）  
+数据库设计纲要（具体看下一节 `Stroage 数据`）：  
+* Location Table -（存储 Driver - driver id 的实时位置，以及最后更新时间） - 写多  
+* Driver Table -（Driver 是否可用 - 检查是否有分配 trip id）
+* Trip Table（匹配 Driver 和 Rider 的表） — 读多（司机每 4 秒 requst 时会去读一下有没有匹配的）  
+* User Table - 用户数据  
 
 
 
@@ -113,27 +132,9 @@ Trip Table（匹配 Driver 和 Rider 的表） —— 读多（司机每4秒requ
 
 
 
-## 可行解总结
-1. 乘客发出打车请求，服务器创建一次 Trip
-    1. 将 trip_id 返回给用户
-    2. 乘客每隔几秒询问一次服务器是否匹配成功
-2. 服务器找到匹配的司机，写入 Trip，状态为等待司机回应
-3. 同时修改 Driver Table 中的司机状态为不可用，并存入对应的 trip_id
-4. 司机汇报自己的位置
-5. 顺便在 Driver Table 中发现有分配给自己的 trip_id
-6. 去 Trip Table 查询对应的 Trip，返回给司机
-7. 司机接受打车请求
-8. 修改 Driver Table, Trip 中的状态信息
-9. 乘客发现自己匹配成功，获得司机信息
-10. 司机拒绝打车请求
-11. 修改 Driver Table，Trip 中的状态信息，标记该司机已经拒绝了该 trip
-12. 重新匹配一个司机，重复第 2 步
-
-
-
 ## Scale 拓展
 隐患？  
-* 需求是150k QPS。Redis 的读写效率 > 100 QPS。那么是不是1-2台就可以了？
+* 需求是 150k QPS。Redis 的读写效率 > 100 QPS。那么是不是 1-2 台就可以了？
 * 万一 Redis 挂了就损失很大。
 * 解决方式—— DB Sharding
     * 目的 1：分摊流量
@@ -141,7 +142,7 @@ Trip Table（匹配 Driver 和 Rider 的表） —— 读多（司机每4秒requ
 * 按照城市 Sharding
     * 难点 1：如何定义城市？
     * 难点 2：如何根据位置信息知道用户在哪个城市？——用多边形代表城市的范围，问题本质变为：求一个点是否在多边形内，属于计算几何问题。
-    * 城市数目：400个
+    * 城市数目：400 个
     * 万一乘客在两个城市边界怎么办？
         * 找到乘客周围的 2-3 个城市
         * 这些城市不能隔太远以至于车太远
