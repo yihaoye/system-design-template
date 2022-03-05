@@ -4,7 +4,7 @@
 **得分点 Checklist：**  
 * Weak（完成以下）
     * 分析出 Uber 是写密集型应用（与大部分应用是读密集型不一样）
-    * 解决 LBS 类应用的核心问题（Geohash / Google S2）
+    * 解决 LBS 类应用的核心问题 - Geohash（字符串或二分优化） / Google S2（希尔伯特曲线）
         * 如何存储 Driver 的地理位置
         * 如何查询乘客周边的车
 * Hired（完成以下）
@@ -55,9 +55,9 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
 1. 乘客发出打车请求，服务器创建一次 Trip
     1. 将 trip_id 返回给用户
     2. 乘客每隔几秒询问一次服务器是否匹配成功
-2. 服务器找到匹配的司机，写入 Trip，状态为等待司机回应
+2. 服务器（Match Engine）根据 Location Table 和 Geohash 算法找到匹配的司机，写入 Trip，状态为等待司机回应
 3. 同时修改 Driver Table 中的司机状态为不可用，并存入对应的 trip_id
-4. 司机汇报自己的位置
+4. 司机汇报自己的位置（更新 Location Table）
 5. 顺便在 Driver Table 中发现有分配给自己的 trip_id
 6. 去 Trip Table 查询对应的 Trip，返回给司机
 7. 司机接受打车请求
@@ -73,7 +73,7 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
 * Location Table -（存储 Driver - driver id 的实时位置，以及最后更新时间） - 写多  
 * Driver Table -（Driver 是否可用 - 检查是否有分配 trip id）
 * Trip Table（匹配 Driver 和 Rider 的表） — 读多（司机每 4 秒 requst 时会去读一下有没有匹配的）  
-* User Table - 用户数据  
+* Rider/User Table - 乘客/用户数据  
 
 
 
@@ -125,8 +125,12 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
     * 先查 6 位的 geohash 找 0.6 公里以内的
     * 如果没有༌再查 5 位的 geohash 找 2.4 公里以内的
     * 如果没有༌再查 4 位的 geohash 找 20 公里以内的
+* 上述的过程的数据库：
+![](./uber-location-table.png)  
+* 匹配司机成功后，用户查询（Driver Table 和 Location Table）司机所在位置及详情
+    * driver1_id → (lat, lng, status, updated_at, trip_id)
 
-匹配司机成功，用户查询司机所在位置  
+
 司机角度  
 ![](./driver-with-match-flow.png)  
 
@@ -147,4 +151,11 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
         * 找到乘客周围的 2-3 个城市
         * 这些城市不能隔太远以至于车太远
         * 汇总多个城市的查询结果
+
+### 应对 QPS 增长的系统优化
+当请求越来越多的时候，就需要一个消息队列（最大的请求：司机地理位置的更新）  
+
+可以根据地区（比如 Northeast、Northwest 等等）分割集群（网关、后端应用服务、消息队列、数据库）  
+各区信息需要同步吗？  
+一般不需要，但是用户数据：可能有人非经常性地跨区、跨国。  
 
