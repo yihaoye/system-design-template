@@ -1,6 +1,9 @@
 # Uber 或 Uber Eat 系统设计
 引用：https://jiayi797.github.io/2018/01/21/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1-%E8%AE%BE%E8%AE%A1Uber/  
   
+Uber 单一地区的系统架构:  
+![](./uber-single-zone-services-architecture.png)  
+
 **得分点 Checklist：**  
 * Weak（完成以下）
     * 分析出 Uber 是写密集型应用（与大部分应用是读密集型不一样）
