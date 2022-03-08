@@ -28,8 +28,8 @@ Uber 多地区的系统架构概况:
 需要设计哪些功能？设计到什么地步？  
 
 * 第一阶段
-    * Driver report locations 司机报告自己的位置—— heart beat 模式
-    * Rider request Uber, match a driver with rider 乘客叫车，匹配一辆车
+    * Driver report locations 司机报告自己的位置（司机需要定期通知服务，告诉他们当前的位置和他们可以接载乘客） —— heart beat 模式
+    * Rider request Uber, match a driver with rider 乘客叫车，匹配一辆车（乘客可以看到附近所有可用的司机）
 * 第二阶段
     * Driver deny/accept a request 司机取消/启动 接单
     * Driver cancel a match request 司机取消订单
@@ -45,6 +45,13 @@ Uber 多地区的系统架构概况:
 Driver QPS = 200k/4 = 50k，每次汇报200k个请求，每4秒汇报一次；这个占大头  
 Peek Driver QPS = 50k x 3 = 150k  
 Rider QPS 可以忽略：不用随时汇报位置，一定远小于 Driver QPS  
+
+```
+- 让我们假设我们有 3 亿客户和 100 万司机，每天有 100 万活跃客户和 50 万活跃司机。
+- 让我们假设每天有 100 万次乘车。
+- 让我们假设所有活跃的司机每三秒钟通知一次他们的当前位置。
+- 一旦客户提出乘车请求，系统应该能够实时联系司机。
+```
 
 
 
@@ -87,6 +94,7 @@ Driver 如何获得打车请求？—— Report location 的同时，服务器�
 
 ### Geohash（前置知识）
 经纬度可通过数学办法（多种）转换成字符串哈希，前缀共同字符越多说明越相近。  
+![](./geohash.jpeg)  
 比如当一个 Rider（打车者）的位置的 Geohash 为 9q9hvu7wbq2s 时，如何找到位置开头以9q9hv开头的车辆？数据库怎么存？  
 
 * SQL 数据库
