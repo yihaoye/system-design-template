@@ -10,7 +10,7 @@ Uber 多地区的系统架构概况:
 **得分点 Checklist：**  
 * Weak（完成以下）
     * 分析出 Uber 是写密集型应用（与大部分应用是读密集型不一样）
-    * 解决 LBS 类应用的核心问题 - Geohash（字符串或二分优化） / Google S2（希尔伯特曲线）
+    * 解决 LBS 类应用的核心问题 - Geohash（字符串或二分优化） / Google S2（希尔伯特曲线）/ QuadTree
         * 如何存储 Driver 的地理位置
         * 如何查询乘客周边的车
 * Hired（完成以下）
@@ -40,7 +40,7 @@ Uber 多地区的系统架构概况:
     * Uber Pool
     * Uber Eat
 
-### QPS / Stroage
+### QPS
 假设 20w 司机同时在线：  
 Driver QPS = 200k/4 = 50k，每次汇报200k个请求，每4秒汇报一次；这个占大头  
 Peek Driver QPS = 50k x 3 = 150k  
