@@ -56,7 +56,7 @@
 5. 数据存储设计
    * 数据库表设计：
      * User: {VARCHAR(32) userID, VARCHAR(255) name, VARCHAR(255) email, BIGINT(20) numSubscribe...}
-     * Video Metadata: {VARCHAR(32) videoID, VARCHAR(32) userID, VARCHAR(100) title, VARCHAR(255) desc, VARCHAR(255) videoAddr, VARCHAR(255) thumbnailAddr, BIGINT(20) numLike, BIGINT(20) numDislike, BIGINT(20) numView...}
+     * Video Metadata: {VARCHAR(32) videoID, VARCHAR(32) userID, VARCHAR(100) title, VARCHAR(255) desc, VARCHAR(255) videoAddr, VARCHAR(255) thumbnailAddr, BIGINT(20) numLike, BIGINT(20) numDislike, BIGINT(20) numView...} - 其中 numLike、numDislike、numView 应该拆分到另外的表或数据库，因为它们是大数据而且写频率非常高，在做这类数据的统计时，需要用到一些相关的数据结构，比如 [HyperLogLog](https://github.com/yihaoye/data-structure-and-algorithm-study-notes/blob/master/Common%20Algorithm%20and%20Theory/HyperLogLog.md)，[Redis 里有内置的 HyperLogLog 数据结构及相关工具供使用](https://mp.weixin.qq.com/s/MVxmH5r0tP6sQ9WKVLoDbw)
      * Comment: {VARCHAR(32) commentID, VARCHAR(32) userID, VARCHAR(32) videoID, VARCHAR(255) content, TIMESTAMP time...}
    * 数据存储选择：
      * SQL - 适合存储 User、Video Metadata 表
